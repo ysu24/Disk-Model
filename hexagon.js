@@ -9,7 +9,7 @@ const DOT_SIZE = .05;                  // Size of the dots in the canvas
 const SEG_SIZE = DOT_SIZE;             // Segment size 
 const START_LEN = 30;                  // Initial length of the ball
 const RADIUS = 2.44845244;             // Radius of the main shape
-const SAFE_RADIUS = 1.5;               // Radius inside which the ball is safe
+const SAFE_RADIUS = 1.6;               // Radius inside which the ball is safe
 const GROWTH_FACTOR = 10;              // Ball growth rate
 let DELAY = 30;                        // Delay for rendering in the game loop
 let inGame = false;                    // Game status (running or not)
@@ -30,8 +30,8 @@ let ball = {
     direction: START_DIRECTION
 };
 
-// Creating an octagon in hyperbolic space
-let surface = HyperbolicCanvas.Polygon.givenHyperbolicNCenterRadius(8, HyperbolicCanvas.Point.CENTER, RADIUS);
+// Creating an hexagon in hyperbolic space
+let surface = HyperbolicCanvas.Polygon.givenHyperbolicNCenterRadius(6, HyperbolicCanvas.Point.CENTER, RADIUS);
 
 // Creating a circle strictly inside the octagon - this is a safe zone for the ball
 let safeCircle = HyperbolicCanvas.Circle.givenHyperbolicCenterRadius(HyperbolicCanvas.Point.CENTER, SAFE_RADIUS);
@@ -46,58 +46,53 @@ sides.forEach(line=>{
 
 // Creating reflection lines through the center of the canvas
 let reflect_lines = [];
-for (let i=0; i<8;i++){
+for (let i=0; i<6; i++){
     let apo = HyperbolicCanvas.Line.givenAnglesOfIdealPoints(
-        Math.PI/8+i*Math.PI/4, HyperbolicCanvas.Angle.opposite(Math.PI/8+i*Math.PI/4) 
+        Math.PI/6+i*Math.PI/3, HyperbolicCanvas.Angle.opposite(Math.PI/6+i*Math.PI/3) 
         );
     reflect_lines.push(apo);
-};
-// console.log(reflect_lines)
+}
+
 
 //define the gluing sides
 function gluing_rules(exit){
     switch(exit){
-        case 0:return 6;
-        case 1:return 7;
-        case 2:return 4;
-        case 3:return 5;
-        case 4:return 2;
-        case 5:return 3;
-        case 6:return 0;
-        case 7:return 1;
+        case 0: return 4;
+        case 1: return 5;
+        case 2: return 0;
+        case 3: return 1;
+        case 4: return 2;
+        case 5: return 3;
     }
 }
 
+
 function reflIndex(exit){
     switch(exit){
-        case 0:return 7;
-        case 1:return 0;
-        case 2:return 3;
-        case 3:return 4;
-        case 4:return 3;
-        case 5:return 4;
-        case 6:return 7;
-        case 7:return 0;
+        case 0: return 5;
+        case 1: return 0;
+        case 2: return 1;
+        case 3: return 2;
+        case 4: return 3;
+        case 5: return 4;
     }
 }
+
 
 // color the gluing sides
 function colorSides(){
     let color1 = 'red';
     let color2 = 'green';
     let color3 = 'blue';
-    let color4 = 'purple';
     let color = 'white';
-    for (let i =0; i<8; i++){
+    for (let i =0; i<6; i++){
         switch(i){
             case (0): { color =color1; break;}
             case (1): { color =color2; break;}
             case (2): { color =color3; break;}
-            case (3): { color =color4; break;}
-            case (4): { color =color3; break;}
-            case (5): { color =color4; break;}
-            case (6): { color =color1; break;}
-            case (7): { color =color2; break;}
+            case (3): { color =color1; break;}
+            case (4): { color =color2; break;}
+            case (5): { color =color3; break;}
         }
         let path = myCanvas.pathForHyperbolic(sides[i]);
         ctx.strokeStyle = color;
@@ -105,6 +100,7 @@ function colorSides(){
         myCanvas.stroke(path);
     }
 }
+
 
 //define geometric functions
 //reflection of a point through a line going through 0
@@ -273,7 +269,7 @@ function init(){
 
 //game loop
 function render() {
-    // myCanvas.clear();
+    myCanvas.clear();
     drawSurface();
     move_ball(ball);
     setTimeout(function(){requestAnimationFrame(render);},DELAY);
