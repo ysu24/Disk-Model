@@ -1,48 +1,50 @@
 // CONSTRUCTOR
-//define canvas
+
+// Setting up the Hyperbolic canvas and its context
 let myCanvas = HyperbolicCanvas.create('#hyperbolic-canvas');
 let ctx= myCanvas.getContext('2d');
 
-//set constants, initialise global variables
-const DOT_SIZE = .03;
-const SEG_SIZE = DOT_SIZE;
-const START_LEN = 30;
-const RADIUS = 2.44845244;
-const SAFE_RADIUS = 1.5;
-const GROWTH_FACTOR = 10;
-let DELAY = 30;
-let inGame = false;
-const LEFT= 37;
-const RIGHT= 39;
-const SPACE = 32;
-const START_DIRECTION = Math.PI/8;
-const START_HEAD_POS = HyperbolicCanvas.Point.givenCoordinates(0,0);
-// let ball = {};
-let START_HEAD ={
+// Global Constants & Variables Initialization
+const DOT_SIZE = .05;                  // Size of the dots in the canvas
+const SEG_SIZE = DOT_SIZE;             // Segment size 
+const START_LEN = 30;                  // Initial length of the ball
+const RADIUS = 2.44845244;             // Radius of the main shape
+const SAFE_RADIUS = 1.5;               // Radius inside which the ball is safe
+const GROWTH_FACTOR = 10;              // Ball growth rate
+let DELAY = 30;                        // Delay for rendering in the game loop
+let inGame = false;                    // Game status (running or not)
+const LEFT = 37;                       // KeyCode for left arrow
+const RIGHT = 39;                      // KeyCode for right arrow
+const SPACE = 32;                      // KeyCode for space
+const START_DIRECTION = Math.PI/8;     // Starting direction of the ball
+const START_HEAD_POS = HyperbolicCanvas.Point.givenCoordinates(0,0); // Starting position of the ball
+let START_HEAD = {                     // Object defining starting head of the ball
     position : START_HEAD_POS, 
     direction : START_DIRECTION
- };
-let START_BODY = [START_HEAD.position];
+};
+let START_BODY = [START_HEAD.position]; // Array containing the ball's initial body positions
 
-// Simplify the ball structure
+// Constructing the initial state of the ball
 let ball = {
     position: START_HEAD_POS,
     direction: START_DIRECTION
 };
 
-//construct the octagon
+// Creating an octagon in hyperbolic space
 let surface = HyperbolicCanvas.Polygon.givenHyperbolicNCenterRadius(8, HyperbolicCanvas.Point.CENTER, RADIUS);
-//safeCircle is a circle which is stricly inside the octagon
+
+// Creating a circle strictly inside the octagon - this is a safe zone for the ball
 let safeCircle = HyperbolicCanvas.Circle.givenHyperbolicCenterRadius(HyperbolicCanvas.Point.CENTER, SAFE_RADIUS);
 
-//get the sides and the circles defining the boundary of the octagon
-let sides = surface.getLines();
+// Constructing the sides and boundary circles of the octagon
+let sides = surface.getLines(); // Lines that form the octagon
 let sides_circles = [];
 sides.forEach(line=>{
     let circle = line.getHyperbolicGeodesic();
     sides_circles.push(circle);
 });
-//get lines through the center to reflect
+
+// Creating reflection lines through the center of the canvas
 let reflect_lines = [];
 for (let i=0; i<8;i++){
     let apo = HyperbolicCanvas.Line.givenAnglesOfIdealPoints(
@@ -50,7 +52,7 @@ for (let i=0; i<8;i++){
         );
     reflect_lines.push(apo);
 };
-console.log(reflect_lines)
+// console.log(reflect_lines)
 
 //define the gluing sides
 function gluing_rules(exit){
@@ -63,13 +65,6 @@ function gluing_rules(exit){
         case 5:return 3;
         case 6:return 0;
         case 7:return 1;
-
-        // case 0:return 3;
-        // case 1:return 4;
-        // case 2:return 5;
-        // case 3:return 0;
-        // case 4:return 1;
-        // case 5:return 2;
     }
 }
 
@@ -103,38 +98,12 @@ function colorSides(){
             case (5): { color =color4; break;}
             case (6): { color =color1; break;}
             case (7): { color =color2; break;}
-
-            // case (0): { color =color1; break;}
-            // case (1): { color =color2; break;}
-            // case (2): { color =color3; break;}
-            // case (3): { color =color1; break;}
-            // case (4): { color =color2; break;}
-            // case (5): { color =color3; break;}
         }
         let path = myCanvas.pathForHyperbolic(sides[i]);
         ctx.strokeStyle = color;
         ctx.lineWidth = 6;
         myCanvas.stroke(path);
     }
-    // for (let i =0; i<8; i++){
-    //     let p = surface.getVertices()[i];
-    //     let path = myCanvas.pathForHyperbolic(
-    //         HyperbolicCanvas.Circle.givenHyperbolicCenterRadius(p, DOT_SIZE*4));
-    //     myCanvas.fill(path);
-    // }
-}
-
-//draw surface
-function drawSurface(){
-    ctx.fillStyle = 'black'
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = 'black';
-    let path = myCanvas.pathForHyperbolic(surface);
-    myCanvas.stroke(path);
-    let path1 = myCanvas.pathForHyperbolic(
-        HyperbolicCanvas.Circle.givenHyperbolicCenterRadius(HyperbolicCanvas.Point.CENTER, RADIUS));
-    myCanvas.stroke(path1);
-    colorSides();
 }
 
 //define geometric functions
@@ -167,8 +136,23 @@ function angleGivenPoints(a,b){
     return (vect[0]>=0) ? Math.atan(slope) : Math.atan(slope)+Math.PI;    
 }
 
-// BALL MOVEMENTS
 
+//draw surface
+
+function drawSurface(){
+    ctx.fillStyle = 'black'
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'black';
+    let path = myCanvas.pathForHyperbolic(surface);
+    myCanvas.stroke(path);
+    let path1 = myCanvas.pathForHyperbolic(
+        HyperbolicCanvas.Circle.givenHyperbolicCenterRadius(HyperbolicCanvas.Point.CENTER, RADIUS));
+    myCanvas.stroke(path1);
+    colorSides();
+}
+
+
+// BALL MOVEMENTS
 function initialize_ball(ball){
     START_HEAD.position = START_HEAD_POS;
     START_HEAD.direction = START_DIRECTION;
