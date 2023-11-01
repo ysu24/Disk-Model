@@ -17,12 +17,18 @@ const RIGHT= 39;
 const SPACE = 32;
 const START_DIRECTION = Math.PI/8;
 const START_HEAD_POS = HyperbolicCanvas.Point.givenCoordinates(0,0);
-let ball = {};
+// let ball = {};
 let START_HEAD ={
     position : START_HEAD_POS, 
     direction : START_DIRECTION
  };
 let START_BODY = [START_HEAD.position];
+
+// Simplify the ball structure
+let ball = {
+    position: START_HEAD_POS,
+    direction: START_DIRECTION
+};
 
 //construct the octagon
 let surface = HyperbolicCanvas.Polygon.givenHyperbolicNCenterRadius(8, HyperbolicCanvas.Point.CENTER, RADIUS);
@@ -163,7 +169,6 @@ function angleGivenPoints(a,b){
 
 // BALL MOVEMENTS
 
-//snake functions
 function initialize_ball(ball){
     START_HEAD.position = START_HEAD_POS;
     START_HEAD.direction = START_DIRECTION;
@@ -179,11 +184,9 @@ function initialize_ball(ball){
 
 function draw_ball(ball){
     myCanvas.setContextProperties({ fillStyle: 'black' });
-    // snake.body.forEach(node => {
-        let path = myCanvas.pathForHyperbolic(
-            HyperbolicCanvas.Circle.givenHyperbolicCenterRadius(ball.body[0], DOT_SIZE));
-        myCanvas.fill(path);    
-    // });
+    let path = myCanvas.pathForHyperbolic(
+        HyperbolicCanvas.Circle.givenHyperbolicCenterRadius(ball.position, DOT_SIZE));
+    myCanvas.fill(path);
 }
 
 function new_ball(ball, dir, p){
@@ -195,74 +198,65 @@ function new_ball(ball, dir, p){
 
 //turn in straight angles
 function turn(ball, str){
-    let newHead = ball.instruction.position.hyperbolicDistantPoint(
-        SEG_SIZE*(ball.steps_from_instr+1),
-        ball.instruction.direction);
-    let dir = angleGivenPoints(newHead, ball.body[0]);
+    let dir = ball.direction;
     switch(str){
-        case 'left': {dir += Math.PI/2;
-        break;
+        case 'left': {
+            dir += Math.PI/2;
+            break;
         }
-        case 'right':{dir-= Math.PI/2;
-        break;
+        case 'right': {
+            dir -= Math.PI/2;
+            break;
         }
         default: break;
     }
-    new_ball(ball, dir, ball.body[0]);
-    move(ball);
+    ball.direction = HyperbolicCanvas.Angle.normalize(dir);
+    move_ball(ball);
 }
 
-//main move function, takes care of transitions at octagon sides
 function move_ball(ball){
-    let newHead = ball.instruction.position.hyperbolicDistantPoint(
-        SEG_SIZE*(ball.steps_from_instr+1),
-        ball.instruction.direction);
-    ball.steps_from_instr++;
+    let newHead = ball.position.hyperbolicDistantPoint(
+        SEG_SIZE,
+        ball.direction);
+    
     let exitIndex = null;
     if (!safeCircle.containsPoint(newHead)){
-        for (let i = 0; i< 8;i++){
+        for (let i = 0; i< 8; i++){
             if (sides_circles[i].containsPoint(newHead)){
                 exitIndex = i;
                 break;
             }
         }
-        if (exitIndex!=null){
-            let transNewHead = reflect(ball.body[0],reflect_lines[reflIndex(exitIndex)]);
-            let ausil = reflect(newHead,reflect_lines[reflIndex(exitIndex)]);
-            let m=-1/HyperbolicCanvas.Angle.toSlope(sides_circles[gluing_rules(exitIndex)].euclideanAngleAt(transNewHead));
-            let p2 = HyperbolicCanvas.Point.givenCoordinates(1/10+transNewHead.getX(),m/10+transNewHead.getY());
-            let newNewHead = reflect2(ausil, transNewHead,p2);
-            let newAngle = HyperbolicCanvas.Angle.normalize(angleGivenPoints(newNewHead,transNewHead));
-            new_ball(ball,newAngle,transNewHead);
-            newHead = transNewHead;
+        if (exitIndex !== null){
+            let transNewHead = reflect(ball.position, reflect_lines[reflIndex(exitIndex)]);
+            let ausil = reflect(newHead, reflect_lines[reflIndex(exitIndex)]);
+            let m = -1/HyperbolicCanvas.Angle.toSlope(sides_circles[gluing_rules(exitIndex)].euclideanAngleAt(transNewHead));
+            let p2 = HyperbolicCanvas.Point.givenCoordinates(1/10 + transNewHead.getX(), m/10 + transNewHead.getY());
+            let newNewHead = reflect2(ausil, transNewHead, p2);
+            ball.position = transNewHead;
+            ball.direction = HyperbolicCanvas.Angle.normalize(angleGivenPoints(newNewHead, transNewHead));
+        } else {
+            ball.position = newHead;
         }
-    };
-    ball.body.unshift(newHead);
-    if (ball.growing>0){
-        ball.growing--;
+    } else {
+        ball.position = newHead;
     }
-    else{
-        ball.body.pop();
-    }   
-}
 
-//move the ball
-function move(ball){
-    move_ball(ball);
     draw_ball(ball);
 }
+
 
 //listeners for turning
 var pressed = false;
 document.addEventListener('keydown', function(key){
     if (!pressed && inGame){
-        switch(key.which){
-        case LEFT: {
+        switch(key.code){
+        case 'ArrowLeft': {
             pressed = true;
             turn(ball,'left');
             break;
             }
-        case RIGHT: {
+        case 'ArrowRight': {
             pressed = true;
             turn(ball,'right');
             break;
@@ -273,7 +267,7 @@ document.addEventListener('keydown', function(key){
 
 //prevent repeat events if key is held down
 document.addEventListener('keyup', function(key){
-    if (key.which === LEFT || key.which === RIGHT && inGame){
+    if ((key.code === 'ArrowLeft' || key.code === 'ArrowRight') && inGame){
         pressed = false;
     }
 })
@@ -297,7 +291,7 @@ function init(){
 function render() {
     myCanvas.clear();
     drawSurface();
-    move(ball);
+    move_ball(ball);
     setTimeout(function(){requestAnimationFrame(render);},DELAY);
   };
 
